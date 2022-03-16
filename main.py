@@ -1,11 +1,10 @@
 import os
 import sqlite3
-import time
+import numpy as np
 
 import httplib2
 import pandas as pd
 import vk_api
-from google.protobuf import service
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -24,8 +23,6 @@ def get_service_sacc():
 
 sheet = get_service_sacc().spreadsheets()
 sheet_id = "1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM"
-
-
 
 oformlenie = "Нажмите кнопку <сделать заказ> чтобы начать оформление заказа"
 city_user = ""
@@ -137,8 +134,10 @@ def main():
                         if row['Город'] == city_user:
                             true_city = 1
                             post_mail[0].append(wb['Адрес'][i])
+                    post_mail = np.asarray(post_mail).reshape(-1, 1)
 
-                    print(post_mail)
+                    post_mail_colum = post_mail.tolist()
+                    print(post_mail2)
                     if true_city == 1:
                         rangeAll = '{0}!A1:ZZ'.format("Лист1")
                         body = {}
@@ -150,8 +149,7 @@ def main():
                             spreadsheetId=sheet_id,
                             range='лист1!A1',
                             valueInputOption="RAW",
-                            body={'values': post_mail}).execute()
-                        
+                            body={'values': post_mail_colum}).execute()
 
                     send_message(id,
                                  "https://docs.google.com/spreadsheets/d/1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM/edit?usp=sharing")
