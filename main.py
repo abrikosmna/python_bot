@@ -12,12 +12,6 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 import TOKEN_bot
 
 
-def get_service_sacc():
-    creds_json = os.path.dirname(__file__) + "/pythonbotvk-3bcdc4b45418.json"
-    scopes = ['https://www.googleapis.com/auth/spreadsheets']
-
-    creds_service = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scopes).authorize(httplib2.Http())
-    return build('sheets', 'v4', http=creds_service)
 
 
 post_mail = [[]]
@@ -29,10 +23,6 @@ oformlenie = "Нажмите кнопку <сделать заказ> чтобы
 city_user = ""
 product_in_stock_wb = pd.read_excel("product_in_stock.xlsx", sheet_name="Лист1")
 true_city = 0
-
-
-sheet = get_service_sacc().spreadsheets()
-sheet_id = "1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM"
 
 
 vk_session = vk_api.VkApi(token=TOKEN_bot.TOKEN)
@@ -55,6 +45,16 @@ sql.execute("""CREATE TABLE IF NOT EXISTS users(
 db.commit()
 user_act = "0"
 
+
+def get_service_sacc():
+    creds_json = os.path.dirname(__file__) + "/pythonbotvk-3bcdc4b45418.json"
+    scopes = ['https://www.googleapis.com/auth/spreadsheets']
+
+    creds_service = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scopes).authorize(httplib2.Http())
+    return build('sheets', 'v4', http=creds_service)
+
+sheet = get_service_sacc().spreadsheets()
+sheet_id = "1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM"
 
 def send_message(user_id, message, keyboard=None):
     button = {"user_id": user_id,
@@ -121,10 +121,11 @@ def post_mail_func(post_mail, id):
     send_message(id,
                  "https://docs.google.com/spreadsheets/d/1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM/edit?usp=sharing")
     send_message(id, "Выберите пункт выдачи из предложенного списка")
+    return true_city
 
 
 def main():
-    global city_user, resp, true_city, post_mail, product_in_stock, money, not_in_stock, keyboard, new_prod
+    global city_user, resp, true_city, post_mail, product_in_stock, money, not_in_stock
     for event in longpool.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
             msg = event.text.lower()
@@ -172,14 +173,14 @@ def main():
                     sql.execute(f"UPDATE users SET pos_produc ={Fix_msg(msg)} WHERE userId = {id}")
                     sql.execute(f"UPDATE users SET act = 'Get_city' WHERE userId = {id}")
                     db.commit()
-                    product_stock(id)
+                    money, not_in_stock = product_stock(id)
                 elif user_act == "Get_city" and not_in_stock == 1:
                     sql.execute(f"UPDATE users SET pos_produc ={Fix_msg(msg)} WHERE userId = {id}")
                     sql.execute(f"UPDATE users SET act = 'Get_city' WHERE userId = {id}")
                     db.commit()
                     money, not_in_stock = product_stock(id)
                     not_in_stock = 0
-                elif user_act == "Get_city":
+                elif user_act == "Get_city" and not_in_stock == 0:
                     sql.execute(f"UPDATE users SET city ={Fix_msg(msg)} WHERE userId = {id}")
                     sql.execute(f"UPDATE users SET act = 'Get_post' WHERE userId = {id}")
                     db.commit()
@@ -188,7 +189,15 @@ def main():
                     sql.execute(f"UPDATE users SET post ={Fix_msg(msg)} WHERE userId ={id}")
                     sql.execute(f"UPDATE users SET act = 'REG' WHERE userId ={id}")
                     db.commit()
-                    send_message(id, "Оплатите заказ по ссылке:")
+                    send_message(id, f"К оплате {money}  Оплатите заказ по ссылке:")
+                    send_message(id, "Спасибо за заказ")
+                    send_message(id, "Если хотите еще раз заказать напишите <заказ>")
+                elif user_act == "REG":
+                    new_order = 1
+                    send_message(id, "Напишите номер позиции нового заказа")
+                    sql.execute(f"UPDATE users SET act = 'Get_pos_produc' WHERE userId = {id}")
+                    db.commit()
+                
 
 
 main()
