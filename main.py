@@ -5,14 +5,11 @@ from openpyxl import load_workbook
 import httplib2
 import pandas as pd
 import vk_api
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+from vk_api.longpoll import VkLongPoll
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import VkLongPoll, VkEventType
 import TOKEN_bot
-
-
-
 
 post_mail = [[]]
 money = 0
@@ -53,8 +50,10 @@ def get_service_sacc():
     creds_service = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scopes).authorize(httplib2.Http())
     return build('sheets', 'v4', http=creds_service)
 
+
 sheet = get_service_sacc().spreadsheets()
 sheet_id = "1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM"
+
 
 def send_message(user_id, message, keyboard=None):
     button = {"user_id": user_id,
@@ -124,10 +123,12 @@ def post_mail_func(post_mail, id):
     return true_city
 
 
+
+
 def main():
-    global city_user, resp, true_city, post_mail, product_in_stock, money, not_in_stock
+    global city_user, resp, true_city, post_mail, product_in_stock, money, not_in_stock, recipient
     for event in longpool.listen():
-        if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+        if event.type == vk_api.longpoll.VkEventType.MESSAGE_NEW and event.to_me:
             msg = event.text.lower()
             id = event.user_id
             sql.execute(f" SELECT userId FROM users WHERE userId = '{id}'")
@@ -189,15 +190,13 @@ def main():
                     sql.execute(f"UPDATE users SET post ={Fix_msg(msg)} WHERE userId ={id}")
                     sql.execute(f"UPDATE users SET act = 'REG' WHERE userId ={id}")
                     db.commit()
-                    send_message(id, f"К оплате {money}  Оплатите заказ по ссылке:")
+                    send_message(id, f'Сумма: {money}\n Ссылка:')
                     send_message(id, "Спасибо за заказ")
                     send_message(id, "Если хотите еще раз заказать напишите <заказ>")
                 elif user_act == "REG":
-                    new_order = 1
                     send_message(id, "Напишите номер позиции нового заказа")
                     sql.execute(f"UPDATE users SET act = 'Get_pos_produc' WHERE userId = {id}")
                     db.commit()
-                
 
 
 main()
