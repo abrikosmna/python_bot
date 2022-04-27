@@ -1,0 +1,14 @@
+from pypqiwip2 import QiwiP2P
+from pyqiwip2p.types import QiwiCustomer, QiwiDatetim
+P2P = QiwiP2P(auth_key="48e7qUxn9T7RyYE1MVZswX1FRSbE6iyCj2gCRwwF3Dnh5XrasNTx3BGPiMsyXQFNKQhvukniQG8RTVhYm3iPuaUHBhkMMhqjcaoDjzJWowLiNeq1S657WuzoRdW2FAXx87gYfWrKVdRzfVDcz7hQbtQcC37Vkt6FAUpWwLxMtEXYND4CV28ssQBEt3yHT")
+bill_id = "89618745735"
+amount = 1
+lifetime = 15
+comment = "Оплатить заказ"
+bill = p2p.bill(amount=amount, lifetime=lifetime, comment=comment)
+send_message(id,f'Сумма: {amount}\nСсылка живет: {lifetime} минут\nСсылка:\n{bill.pay_url}')
+status = qiwi.check_status(bill_id)
+if status == 'PAID':
+    send_message(id, 'Оплата прошла успешно!')
+else:
+    send_message(id, 'Вы не оплатили счет!')
