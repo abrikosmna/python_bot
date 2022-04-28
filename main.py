@@ -9,6 +9,10 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from platform import python_version
 import TOKEN_bot
 
 post_mail = [[]]
@@ -117,12 +121,40 @@ def post_mail_func(post_mail, id):
             range='лист1!A1',
             valueInputOption="RAW",
             body={'values': post_mail_colum}).execute()
-    send_message(id,
+        send_message(id,
                  "https://docs.google.com/spreadsheets/d/1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM/edit?usp=sharing")
-    send_message(id, "Выберите пункт выдачи из предложенного списка")
+        send_message(id, "Выберите пункт выдачи из предложенного списка")
     return true_city
 
-
+def send_email(money):
+    global recipient
+    for value in sql.execute("SELECT * FROM users"):
+        recipient = value[5].capitalize()
+    user = TOKEN_bot.user
+    password = TOKEN_bot.password
+    server = 'smtp.gmail.com'
+    str(recipient)
+    sender = user
+    subject = 'Заказ принят'
+    text = f'Спасибо за заказ <br>' \
+           f' сумма заказа {money} <br>' \
+           f' Ждем вас еще в нашем магазине'
+    html = '<html><head></head><body><p>' + text + '</p></body></html>'
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = 'Python Bot <' + sender + '>'
+    msg['To'] = ', '.join(recipient)
+    msg['Reply-To'] = sender
+    msg['Return-Path'] = sender
+    msg['X-Mailer'] = 'Python/' + (python_version())
+    part_text = MIMEText(text, 'plain')
+    part_html = MIMEText(html, 'html')
+    msg.attach(part_text)
+    msg.attach(part_html)
+    mail = smtplib.SMTP_SSL(server)
+    mail.login(user, password)
+    mail.sendmail(sender, recipient, msg.as_string())
+    mail.quit()
 
 
 def main():
@@ -192,6 +224,7 @@ def main():
                     db.commit()
                     send_message(id, f'Сумма: {money}\n Ссылка:')
                     send_message(id, "Спасибо за заказ")
+                    send_email(money)
                     send_message(id, "Если хотите еще раз заказать напишите <заказ>")
                 elif user_act == "REG":
                     send_message(id, "Напишите номер позиции нового заказа")
