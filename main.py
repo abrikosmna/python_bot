@@ -66,8 +66,8 @@ def send_message(user_id, message, keyboard=None):
     button = {
         "user_id": user_id,
         "message": message,
-        "random_id": 0,
-              }
+        "random_id": 0
+    }
 
     if keyboard is not None:
         button["keyboard"] = keyboard.get_keyboard()
@@ -76,9 +76,8 @@ def send_message(user_id, message, keyboard=None):
     vk_session.method("messages.send", button)
 
 
-def Fix_msg(msg):
-    msg = "'" + msg + "'"
-    return msg
+def fix_msg(msg):
+    return "'" + msg + "'"
 
 
 def product_stock(ID: int):
@@ -124,30 +123,23 @@ def send_email(money_):
     global recipient
     for value in sql.execute("SELECT * FROM users"):
         recipient = value[5].capitalize()
-    user = TOKEN_bot.user
-    password = TOKEN_bot.password
-    server = 'smtp.gmail.com'
-    str(recipient)
-    sender = user
-    subject = 'Заказ принят'
+    sender = TOKEN_bot.user
     text = f'Спасибо за заказ <br>' \
            f' сумма заказа {money_} <br>' \
            f' Ждем вас еще в нашем магазине'
     html = '<html><head></head><body><p>' + text + '</p></body></html>'
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
+    msg['Subject'] = 'Заказ принят'
     msg['From'] = 'Python Bot <' + sender + '>'
-    msg['To'] = ', '.join(recipient)
+    msg['To'] = ', '.join(str(recipient))
     msg['Reply-To'] = sender
     msg['Return-Path'] = sender
     msg['X-Mailer'] = 'Python/' + (python_version())
-    part_text = MIMEText(text, 'plain')
-    part_html = MIMEText(html, 'html')
-    msg.attach(part_text)
-    msg.attach(part_html)
-    mail = smtplib.SMTP_SSL(server)
-    mail.login(user, password)
-    mail.sendmail(sender, recipient, msg.as_string())
+    msg.attach(MIMEText('<html><head></head><body><p>' + text + '</p></body></html>', 'plain'))
+    msg.attach(MIMEText(html, 'html'))
+    mail = smtplib.SMTP_SSL('smtp.gmail.com')
+    mail.login(TOKEN_bot.user, TOKEN_bot.password)
+    mail.sendmail(sender, str(recipient), msg.as_string())
     mail.quit()
 
 
@@ -157,14 +149,16 @@ def main():
         if event.type == vk_api.longpoll.VkEventType.MESSAGE_NEW and event.to_me:
             msg = event.text.lower()
             ID = event.user_id
-            sql.execute(f" SELECT userId FROM users WHERE userId = '{ID}'")
+            sql.execute(" SELECT userId FROM users WHERE userId = '?'", (ID, ))
             if sql.fetchone() is None:
-                sql.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
-                            (ID, "newUser", "0", "0", "0", "0", "0", "0", "0"))
+                sql.execute(
+                    "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (ID, "newUser", "0", "0", "0", "0", "0", "0", "0")
+                )
                 db.commit()
                 send_message(ID, "Привет для начало оформления заказа напиши старт")
             else:
-                user_action = sql.execute(f"SELECT act FROM users WHERE userId ='{ID}'").fetchone()[0]
+                user_action = sql.execute("SELECT act FROM users WHERE userId ='?'", (ID, )).fetchone()[0]
                 if user_action == "newUser" and msg == "старт":
                     keyboard = VkKeyboard(one_time=True)
                     keyboard.add_button("Сделать заказ", color=VkKeyboardColor.PRIMARY)
@@ -173,26 +167,26 @@ def main():
                 elif user_action == "newUser" and msg == "сделать заказ":
                     send_message(ID, "Начало оформления заказа")
                     send_message(ID, "Напишите свое ФИО")
-                    sql.execute(f"UPDATE users SET act = 'Get_fio' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET act = 'Get_fio' WHERE userId = '?'", (ID, ))
                     db.commit()
                 elif user_action == "Get_fio":
-                    sql.execute(f"UPDATE users SET fio ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_date_of_birth' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET fio = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_date_of_birth' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     send_message(ID, "Введите вашу дату рождения")
                 elif user_action == "Get_date_of_birth":
-                    sql.execute(f"UPDATE users SET date_of_birth ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_telephone' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET date_of_birth = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_telephone' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     send_message(ID, "Введите ваш номер телефона")
                 elif user_action == "Get_telephone":
-                    sql.execute(f"UPDATE users SET telephone ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_emal' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET telephone = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_emal' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     send_message(ID, "Введите вашу электронную почту")
                 elif user_action == "Get_emal":
-                    sql.execute(f"UPDATE users SET emal ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_pos_produc' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET emal = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_pos_produc' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     send_message(
                         ID,
@@ -200,24 +194,24 @@ def main():
                         "(позицию можно посмотреть на страничке сообщества)"
                     )
                 elif user_action == "Get_pos_produc":
-                    sql.execute(f"UPDATE users SET pos_produc ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_city' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET pos_produc = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_city' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     money, not_in_stock = product_stock(ID)
                 elif user_action == "Get_city" and not_in_stock == 1:
-                    sql.execute(f"UPDATE users SET pos_produc ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_city' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET pos_produc = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_city' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     money, not_in_stock = product_stock(ID)
                     not_in_stock = 0
                 elif user_action == "Get_city" and not_in_stock == 0:
-                    sql.execute(f"UPDATE users SET city ={Fix_msg(msg)} WHERE userId = {ID}")
-                    sql.execute(f"UPDATE users SET act = 'Get_post' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET city = ? WHERE userId = '?'", (fix_msg(msg), ID))
+                    sql.execute("UPDATE users SET act = 'Get_post' WHERE userId = '?'", (fix_msg(msg), ID))
                     db.commit()
                     post_mail_func(post_mail, ID)
                 elif user_action == "Get_post":
-                    sql.execute(f"UPDATE users SET post ={Fix_msg(msg)} WHERE userId ={ID}")
-                    sql.execute(f"UPDATE users SET act = 'REG' WHERE userId ={ID}")
+                    sql.execute("UPDATE users SET post = ? WHERE userId = '?'", (ID, ))
+                    sql.execute("UPDATE users SET act = 'REG' WHERE userId = '?'", (ID, ))
                     db.commit()
                     send_message(ID, f'Сумма: {money}\n Ссылка:')
                     send_message(ID, "Спасибо за заказ")
@@ -225,7 +219,7 @@ def main():
                     send_message(ID, "Если хотите еще раз заказать напишите <заказ>")
                 elif user_action == "REG":
                     send_message(id, "Напишите номер позиции нового заказа")
-                    sql.execute(f"UPDATE users SET act = 'Get_pos_produc' WHERE userId = {ID}")
+                    sql.execute("UPDATE users SET act = 'Get_pos_produc' WHERE userId = '?'", (ID, ))
                     db.commit()
 
 
