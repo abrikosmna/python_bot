@@ -18,16 +18,20 @@ import TOKEN_bot
 
 post_mail = [[]]
 money = 0
+true_city = 0
+product_in_stock = None
+not_in_stock = None
+recipient = None
+city_user = ""
+user_act = "0"
+oformlenie = "Нажмите кнопку <сделать заказ> чтобы начать оформление заказа"
+sheet_id = "1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM"
+
 wb = pd.read_excel('CDEK-offices_ru (1).xlsx', sheet_name="Россия")
 book = load_workbook("product_in_stock.xlsx", data_only=True)
 sheet_xlsl = book["Лист1"]
-oformlenie = "Нажмите кнопку <сделать заказ> чтобы начать оформление заказа"
-city_user = ""
 product_in_stock_wb = pd.read_excel("product_in_stock.xlsx", sheet_name="Лист1")
-true_city = 0
-recipient = None
-product_in_stock = None
-not_in_stock = None
+
 vk_session = vk_api.VkApi(token=TOKEN_bot.TOKEN)
 session_api = vk_session.get_api()
 longpool = VkLongPoll(vk_session)
@@ -35,35 +39,34 @@ longpool = VkLongPoll(vk_session)
 db = sqlite3.connect("info.db")
 sql = db.cursor()
 sql.execute("""CREATE TABLE IF NOT EXISTS users(
-    userId  BIGINT,
-    act TEXT,
-    fio TEXT,
-    date_of_birth TEXT,
-    telephone TEXT,
-    emal TEXT,
-    pos_produc TEXT,
-    city TEXT,
-    post TEXT)""")
+    userId          BIGINT,
+    act             VARCHAR (255),
+    fio             VARCHAR (255),
+    date_of_birth   VARCHAR (255),
+    telephone       VARCHAR (255),
+    emal            VARCHAR (255),
+    pos_produc      VARCHAR (255),
+    city            VARCHAR (255),
+    post            VARCHAR (255))
+    """)
 db.commit()
-user_act = "0"
 
 
 def get_service_sacc():
     creds_json = os.path.dirname(__file__) + "/pythonbotvk-3bcdc4b45418.json"
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
-
     creds_service = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scopes).authorize(httplib2.Http())
     return build('sheets', 'v4', http=creds_service)
 
 
 sheet = get_service_sacc().spreadsheets()
-sheet_id = "1PbxNtvA6Kt6F3-IoRhBscrNNRmHaAyg8jiFnhXr-yPM"
 
 
 def send_message(user_id, message, keyboard=None):
-    button = {"user_id": user_id,
-              "message": message,
-              "random_id": 0,
+    button = {
+        "user_id": user_id,
+        "message": message,
+        "random_id": 0,
               }
 
     if keyboard is not None:
@@ -226,4 +229,5 @@ def main():
                     db.commit()
 
 
-main()
+if __name__ == "__main__":
+    main()
